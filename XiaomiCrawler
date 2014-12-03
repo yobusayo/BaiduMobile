@@ -20,6 +20,8 @@ ratingDic = {
              '10':5
              }
 
+pattern = re.compile('\d')
+
 # conn = MySQLdb.connect(host='localhost',user='root',passwd='root',db='baidu_mobile', charset='utf8')
 
 def getAppId(name):
@@ -29,10 +31,10 @@ def getAppId(name):
 #     print html
 
     soup = BeautifulSoup(html)
-    #小米的应用id都是数字
-    pattern = re.compile('\d')
+    
     #当前app信息所在部分：
     tmp = soup.find(attrs = {'class':'applist'}).find_all('a')
+    #小米的应用id都是数字
     appId = ''.join(re.findall(pattern,tmp[0]['href']))
     appName = tmp[1].string
     if(appName == name):
@@ -43,27 +45,32 @@ def getAppId(name):
 def process():
     apps = BaiduMobileApps.getAllApps()
     for app in apps:
-        appId = getAppId(app)
+#         appId = getAppId(app)
+        appId = 318
         url = 'http://app.mi.com/detail/'+str(appId)
         request = urllib.urlopen(url)
         html = request.read()
         
-        soup = BeautifulSoup(html) 
+        soup = BeautifulSoup(html)
         
-        developer = ''
-        rating = ''
-        ratingNum = ''
-        category = ''
-        size = ''
-        version = ''
-        updateTime = ''
-        description = ''
-        newFeatures = ''
+        category = soup.find(attrs = {'class':'bread-crumb'}).find_all('a')[1].string
+        
+        developer = soup.find(attrs = {'class':'intro-titles'}).find('p').string
+        rating = ratingDic.get(soup.find(attrs = {'class':'intro-titles'}).find('div').find('div')['class'][1][-1])
+        ratingNum = ''.join(re.findall(pattern, (soup.find(attrs = {'app-intro-comment'}).string)))
+        details = soup.find(attrs = {'class':'details preventDefault'})
+        size = details.find_all('li')[1].string
+        version = details.find_all('li')[3].string
+        updateTime = details.find_all('li')[5].string
+        
+        appText = soup.find(attrs = {'class':'app-text'})
+        description = appText.find_all('p')[0].text +'\n'+ appText.find_all('p')[1].text
+        break
         
     
 if __name__ == '__main__':
-#     process()
+    process()
 #     apps = BaiduMobileApps.getAllApps()
 #     for app in apps:
 #         print str(app)+str(getAppId(app))
-    getAppId('百度')
+#     getAppId('百度')
